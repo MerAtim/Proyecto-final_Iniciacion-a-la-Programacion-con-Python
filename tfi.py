@@ -401,9 +401,9 @@ def reporte_bajo_stock():
 #                          MENÚ PRINCIPAL
 
 def mostrar_menu():
-    print("\n" + Fore.CYAN + Style.BRIGHT + "--------------------------------")
+    print("\n" + Fore.CYAN + Style.BRIGHT + "---------------------------------------")
     print(Fore.CYAN + Style.BRIGHT + "   Sistema de gestión de inventario")
-    print(Fore.CYAN + Style.BRIGHT + "--------------------------------")
+    print(Fore.CYAN + Style.BRIGHT + "---------------------------------------")
     print("1. Registrar producto")
     print("2. Visualizar productos")
     print("3. Actualizar producto")
