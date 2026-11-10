@@ -15,7 +15,7 @@ import sqlite3
 
 # Colorama es opcional: si no está instalado, el programa funciona igual pero sin colores.
 try:
-    from colorama import Fore, Style, init
+    from colorama import Fore, Style, init  #type: ignore
 
     init(autoreset=True)
 except ImportError:
@@ -29,10 +29,7 @@ except ImportError:
 # La base de datos se crea en la misma carpeta que este archivo
 RUTA_DB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "inventario.db")
 
-
-# =====================================================================
 #                       MENSAJES CON COLOR
-# =====================================================================
 
 def mensaje_exito(texto):
     print(Fore.GREEN + texto)
@@ -50,9 +47,7 @@ def titulo(texto):
     print("\n" + Fore.CYAN + Style.BRIGHT + f"--- {texto} ---")
 
 
-# =====================================================================
 #                         BASE DE DATOS
-# =====================================================================
 
 def conectar():
     """Abre y devuelve una conexión a la base de datos."""
@@ -109,9 +104,7 @@ def existe_nombre(nombre, id_excluido=None):
         conexion.close()
 
 
-# =====================================================================
 #                     VALIDACIÓN DE ENTRADAS
-# =====================================================================
 
 def pedir_texto(mensaje, obligatorio=True, valor_actual=None, requiere_letras=False):
     """
@@ -188,9 +181,8 @@ def pedir_confirmacion(mensaje):
         mensaje_error("Responda 's' para sí o 'n' para no.")
 
 
-# =====================================================================
 #                     PRESENTACIÓN DE DATOS
-# =====================================================================
+
 
 def mostrar_tabla(productos):
     """Imprime una lista de productos en formato de tabla."""
@@ -216,9 +208,7 @@ def mostrar_producto(producto):
     print(f"Categoría:   {categoria or '-'}")
 
 
-# =====================================================================
-#                       FUNCIONALIDADES (CRUD)
-# =====================================================================
+#                       FUNCIONALIDADES (ABM)
 
 def registrar_producto():
     """Solicita los datos de un producto nuevo y lo guarda en la base de datos."""
@@ -408,14 +398,12 @@ def reporte_bajo_stock():
         mostrar_tabla(productos)
 
 
-# =====================================================================
 #                          MENÚ PRINCIPAL
-# =====================================================================
 
 def mostrar_menu():
-    print("\n" + Fore.CYAN + Style.BRIGHT + "========================================")
+    print("\n" + Fore.CYAN + Style.BRIGHT + "--------------------------------")
     print(Fore.CYAN + Style.BRIGHT + "   Sistema de gestión de inventario")
-    print(Fore.CYAN + Style.BRIGHT + "========================================")
+    print(Fore.CYAN + Style.BRIGHT + "--------------------------------")
     print("1. Registrar producto")
     print("2. Visualizar productos")
     print("3. Actualizar producto")
