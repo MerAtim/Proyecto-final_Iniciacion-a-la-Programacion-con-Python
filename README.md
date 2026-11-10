@@ -63,3 +63,40 @@ que se ejecuta el programa.
 <br>
 
 ## Capturas:
+
+### Agregar producto:
+<img width="471" height="584" alt="image" src="https://github.com/user-attachments/assets/7e0cfb9e-8fc0-49c9-8906-f0b2e98c4b78" />
+
+<br>
+
+### Excepciones: nombre no puede quedar vacío, ni acepta signos ni números solos:
+<img width="563" height="471" alt="image" src="https://github.com/user-attachments/assets/32b60953-e332-4830-b7bf-b5ff6ead94b7" />
+
+<br>
+
+### Ver productos:
+<img width="760" height="394" alt="image" src="https://github.com/user-attachments/assets/a8768f86-b96b-4114-be5b-ae256073b8b8" />
+
+<br>
+
+### Actualizar un producto:
+
+<img width="790" height="875" alt="image" src="https://github.com/user-attachments/assets/cdd5f4fb-1233-4aa9-81b1-fffbb1183411" />
+
+<br>
+
+### Eliminar producto:
+
+<img width="475" height="437" alt="image" src="https://github.com/user-attachments/assets/b79bea43-ff64-45c1-876e-8b33427bd852" />
+
+<br>
+
+### Buscar Producto:
+
+<img width="329" height="464" alt="image" src="https://github.com/user-attachments/assets/9e8632a8-a66b-4374-a620-51248d6df3fc" />
+
+<br>
+
+### Reporte de bajo stock:
+
+<img width="435" height="289" alt="image" src="https://github.com/user-attachments/assets/479d7562-2eb2-44a8-9902-13fe3f3b4618" />
