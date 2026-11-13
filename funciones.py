@@ -1,17 +1,10 @@
-# Trabajo Final Integrador - Sistema de gestión de inventario
-# Este programa permite, mediante un menú en la terminal:
-# 1. Registrar nuevos productos
-# 2. Visualizar los productos registrados
-# 3. Actualizar un producto mediante su ID
-# 4. Eliminar un producto mediante su ID
-# 5. Buscar productos por ID, nombre o categoría
-# 6. Generar un reporte de productos con stock bajo
-# 7. Salir
-#
-# Los datos se guardan en una base de datos SQLite llamada 'inventario.db'.
+# Módulo con las funciones que interactúan con el usuario:
+# mensajes con color, validación de entradas, presentación de datos
+# y las opciones del menú, que piden los datos y llaman a funciones_sql.
 
-import os
 import sqlite3
+
+import funciones_sql
 
 # Colorama es opcional: si no está instalado, el programa funciona igual pero sin colores.
 try:
@@ -26,8 +19,6 @@ except ImportError:
 
     Fore = Style = _SinColor()
 
-# La base de datos se crea en la misma carpeta que este archivo
-RUTA_DB = os.path.join(os.path.dirname(os.path.abspath(__file__)), "inventario.db")
 
 #                       MENSAJES CON COLOR
 
@@ -45,63 +36,6 @@ def mensaje_aviso(texto):
 
 def titulo(texto):
     print("\n" + Fore.CYAN + Style.BRIGHT + f"--- {texto} ---")
-
-
-#                         BASE DE DATOS
-
-def conectar():
-    """Abre y devuelve una conexión a la base de datos."""
-    return sqlite3.connect(RUTA_DB)
-
-
-def crear_tabla():
-    """Crea la tabla 'productos' si todavía no existe."""
-    conexion = conectar()
-    try:
-        cursor = conexion.cursor()
-        # CHECK evita cantidades o precios negativos directamente desde la base de datos
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS productos (
-                id          INTEGER PRIMARY KEY AUTOINCREMENT,
-                nombre      TEXT    NOT NULL,
-                descripcion TEXT,
-                cantidad    INTEGER NOT NULL CHECK (cantidad >= 0),
-                precio      REAL    NOT NULL CHECK (precio >= 0),
-                categoria   TEXT
-            )
-        """)
-        conexion.commit()
-    finally:
-        conexion.close()
-
-
-def obtener_producto_por_id(id_producto):
-    """Devuelve la fila del producto con ese ID, o None si no existe."""
-    conexion = conectar()
-    try:
-        cursor = conexion.cursor()
-        # Consulta parametrizada (?) para prevenir inyecciones SQL
-        cursor.execute("SELECT * FROM productos WHERE id = ?", (id_producto,))
-        return cursor.fetchone()
-    finally:
-        conexion.close()
-
-
-def existe_nombre(nombre, id_excluido=None):
-    """
-    Indica si ya hay un producto con ese nombre (sin distinguir mayúsculas).
-    id_excluido permite ignorar al propio producto cuando se está actualizando.
-    """
-    conexion = conectar()
-    try:
-        cursor = conexion.cursor()
-        cursor.execute(
-            "SELECT id FROM productos WHERE LOWER(nombre) = LOWER(?) AND id != ?",
-            (nombre, id_excluido if id_excluido is not None else -1),
-        )
-        return cursor.fetchone() is not None
-    finally:
-        conexion.close()
 
 
 #                     VALIDACIÓN DE ENTRADAS
@@ -131,7 +65,7 @@ def pedir_nombre(mensaje, valor_actual=None, id_producto=None):
     """Pide el nombre de un producto y verifica que no esté repetido."""
     while True:
         nombre = pedir_texto(mensaje, valor_actual=valor_actual, requiere_letras=True).title()
-        if existe_nombre(nombre, id_excluido=id_producto):
+        if funciones_sql.existe_nombre(nombre, id_excluido=id_producto):
             mensaje_error(f"Ya existe un producto llamado '{nombre}'. Ingrese otro nombre "
                           "(o use 'Actualizar producto' para modificar el existente).")
             continue
@@ -183,7 +117,6 @@ def pedir_confirmacion(mensaje):
 
 #                     PRESENTACIÓN DE DATOS
 
-
 def mostrar_tabla(productos):
     """Imprime una lista de productos en formato de tabla."""
     encabezado = f"{'ID':<5}{'Nombre':<20}{'Descripción':<28}{'Cant.':>7}{'Precio':>13}  {'Categoría':<15}"
@@ -220,36 +153,22 @@ def registrar_producto():
     precio = pedir_real("Precio: $", minimo=0)
     categoria = pedir_texto("Categoría (opcional): ", obligatorio=False, requiere_letras=True).title()
 
-    conexion = conectar()
     try:
-        cursor = conexion.cursor()
-        cursor.execute(
-            "INSERT INTO productos (nombre, descripcion, cantidad, precio, categoria) "
-            "VALUES (?, ?, ?, ?, ?)",
-            (nombre, descripcion, cantidad, precio, categoria),
-        )
-        conexion.commit()
-        mensaje_exito(f"Producto '{nombre}' registrado con ID {cursor.lastrowid}.")
+        nuevo_id = funciones_sql.registrar_producto(nombre, descripcion, cantidad, precio, categoria)
+        mensaje_exito(f"Producto '{nombre}' registrado con ID {nuevo_id}.")
     except sqlite3.Error as error:
         mensaje_error(f"No se pudo registrar el producto: {error}")
-    finally:
-        conexion.close()
 
 
 def visualizar_productos():
     """Muestra todos los productos registrados."""
     titulo("Productos registrados")
 
-    conexion = conectar()
     try:
-        cursor = conexion.cursor()
-        cursor.execute("SELECT * FROM productos ORDER BY id")
-        productos = cursor.fetchall()
+        productos = funciones_sql.obtener_productos()
     except sqlite3.Error as error:
         mensaje_error(f"No se pudieron consultar los productos: {error}")
         return
-    finally:
-        conexion.close()
 
     if not productos:
         mensaje_aviso("No hay productos registrados.")
@@ -262,7 +181,7 @@ def actualizar_producto():
     titulo("Actualizar producto")
 
     id_producto = pedir_entero("ID del producto a actualizar: ", minimo=1)
-    producto = obtener_producto_por_id(id_producto)
+    producto = funciones_sql.obtener_producto_por_id(id_producto)
     if producto is None:
         mensaje_aviso(f"No existe un producto con ID {id_producto}.")
         return
@@ -278,20 +197,11 @@ def actualizar_producto():
     categoria = pedir_texto(f"Categoría [{categoria or '-'}]: ", valor_actual=categoria,
                             requiere_letras=True).title()
 
-    conexion = conectar()
     try:
-        cursor = conexion.cursor()
-        cursor.execute(
-            "UPDATE productos SET nombre = ?, descripcion = ?, cantidad = ?, precio = ?, categoria = ? "
-            "WHERE id = ?",
-            (nombre, descripcion, cantidad, precio, categoria, id_producto),
-        )
-        conexion.commit()
+        funciones_sql.actualizar_producto(id_producto, nombre, descripcion, cantidad, precio, categoria)
         mensaje_exito(f"Producto con ID {id_producto} actualizado correctamente.")
     except sqlite3.Error as error:
         mensaje_error(f"No se pudo actualizar el producto: {error}")
-    finally:
-        conexion.close()
 
 
 def eliminar_producto():
@@ -299,7 +209,7 @@ def eliminar_producto():
     titulo("Eliminar producto")
 
     id_producto = pedir_entero("ID del producto a eliminar: ", minimo=1)
-    producto = obtener_producto_por_id(id_producto)
+    producto = funciones_sql.obtener_producto_por_id(id_producto)
     if producto is None:
         mensaje_aviso(f"No existe un producto con ID {id_producto}.")
         return
@@ -309,16 +219,11 @@ def eliminar_producto():
         mensaje_aviso("Eliminación cancelada.")
         return
 
-    conexion = conectar()
     try:
-        cursor = conexion.cursor()
-        cursor.execute("DELETE FROM productos WHERE id = ?", (id_producto,))
-        conexion.commit()
+        funciones_sql.eliminar_producto(id_producto)
         mensaje_exito(f"Producto '{producto[1]}' eliminado correctamente.")
     except sqlite3.Error as error:
         mensaje_error(f"No se pudo eliminar el producto: {error}")
-    finally:
-        conexion.close()
 
 
 def buscar_producto():
@@ -331,7 +236,7 @@ def buscar_producto():
 
     if opcion == "1":
         id_producto = pedir_entero("ID del producto: ", minimo=1)
-        producto = obtener_producto_por_id(id_producto)
+        producto = funciones_sql.obtener_producto_por_id(id_producto)
         if producto is None:
             mensaje_aviso(f"No existe un producto con ID {id_producto}.")
         else:
@@ -349,22 +254,11 @@ def buscar_producto():
 
     texto = pedir_texto(f"Texto a buscar en {campo}: ")
 
-    conexion = conectar()
     try:
-        cursor = conexion.cursor()
-        # 'campo' sólo puede valer "nombre" o "categoria" (lo elegimos nosotros arriba),
-        # y el texto del usuario va siempre como parámetro (?), nunca dentro del SQL.
-        # LIKE con % permite coincidencias parciales y no distingue mayúsculas.
-        cursor.execute(
-            f"SELECT * FROM productos WHERE {campo} LIKE ? ORDER BY id",
-            (f"%{texto}%",),
-        )
-        productos = cursor.fetchall()
+        productos = funciones_sql.buscar_productos(campo, texto)
     except sqlite3.Error as error:
         mensaje_error(f"No se pudo realizar la búsqueda: {error}")
         return
-    finally:
-        conexion.close()
 
     if not productos:
         mensaje_aviso(f"No se encontraron productos para '{texto}'.")
@@ -378,72 +272,13 @@ def reporte_bajo_stock():
 
     limite = pedir_entero("Mostrar productos con cantidad menor o igual a: ", minimo=0)
 
-    conexion = conectar()
     try:
-        cursor = conexion.cursor()
-        cursor.execute(
-            "SELECT * FROM productos WHERE cantidad <= ? ORDER BY cantidad, id",
-            (limite,),
-        )
-        productos = cursor.fetchall()
+        productos = funciones_sql.obtener_bajo_stock(limite)
     except sqlite3.Error as error:
         mensaje_error(f"No se pudo generar el reporte: {error}")
         return
-    finally:
-        conexion.close()
 
     if not productos:
         mensaje_exito(f"No hay productos con cantidad menor o igual a {limite}.")
     else:
         mostrar_tabla(productos)
-
-
-#                          MENÚ PRINCIPAL
-
-def mostrar_menu():
-    print("\n" + Fore.CYAN + Style.BRIGHT + "---------------------------------------")
-    print(Fore.CYAN + Style.BRIGHT + "   Sistema de gestión de inventario")
-    print(Fore.CYAN + Style.BRIGHT + "---------------------------------------")
-    print("1. Registrar producto")
-    print("2. Visualizar productos")
-    print("3. Actualizar producto")
-    print("4. Eliminar producto")
-    print("5. Buscar producto")
-    print("6. Reporte de bajo stock")
-    print("7. Salir")
-
-
-def main():
-    # Nos aseguramos de que la base de datos y la tabla existan antes de empezar
-    try:
-        crear_tabla()
-    except sqlite3.Error as error:
-        mensaje_error(f"No se pudo inicializar la base de datos: {error}")
-        return
-
-    # Cada opción del menú se asocia con la función que la resuelve
-    opciones = {
-        "1": registrar_producto,
-        "2": visualizar_productos,
-        "3": actualizar_producto,
-        "4": eliminar_producto,
-        "5": buscar_producto,
-        "6": reporte_bajo_stock,
-    }
-
-    while True:
-        mostrar_menu()
-        opcion = input("Elija una opción (1-7): ").strip()
-
-        if opcion == "7":
-            mensaje_exito("\nGracias por usar el sistema. ¡Hasta luego!")
-            break
-        elif opcion in opciones:
-            opciones[opcion]()
-        else:
-            mensaje_error("Opción inválida. Elija un número del 1 al 7.")
-
-
-# Sólo se ejecuta el menú si el archivo se corre directamente
-if __name__ == "__main__":
-    main()

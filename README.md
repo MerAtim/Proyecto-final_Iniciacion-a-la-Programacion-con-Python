@@ -13,7 +13,7 @@
 
 Aplicación de consola en Python para administrar el inventario de productos
 de un comercio. Los datos se guardan en una base de datos SQLite llamada
-'inventario.db', que se crea automáticamente junto a tfi.py la primera vez
+'inventario.db', que se crea automáticamente en la carpeta del proyecto la primera vez
 que se ejecuta el programa.
 <br>
 
@@ -26,7 +26,18 @@ que se ejecuta el programa.
 <br>
 
 ## Ejecución
-    python tfi.py
+    python main.py
+<br>
+
+## Estructura del proyecto
+
+| Archivo          | Contenido                                                              |
+|------------------|------------------------------------------------------------------------|
+| main.py          | Punto de entrada: muestra el menú principal y llama a cada opción.     |
+| funciones.py     | Interacción con el usuario: validación de entradas, mensajes y tablas. |
+| funciones_sql.py | Consultas a la base de datos (alta, baja, modificación y búsquedas).   |
+| conexion.py      | Conexión a la base de datos SQLite y creación de la tabla.             |
+| inventario.db    | Base de datos con los productos.                                       |
 <br>
 
 ## Funcionalidades del menú
