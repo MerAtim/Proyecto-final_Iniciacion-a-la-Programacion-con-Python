@@ -91,7 +91,7 @@ def buscar_productos(campo, texto):
     Devuelve los productos cuyo 'campo' ("nombre" o "categoria") contenga el texto.
     LIKE con % permite coincidencias parciales y no distingue mayúsculas.
     """
-    # 'campo' no viene del usuario: solo se aceptan estos dos valores,
+    # "campo" no viene del usuario -> solo se aceptan estos dos valores,
     # y el texto del usuario va siempre como parámetro (?), nunca dentro del SQL.
     if campo not in ("nombre", "categoria"):
         raise ValueError(f"Campo de búsqueda inválido: {campo}")
